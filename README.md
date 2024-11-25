@@ -22,12 +22,11 @@ I honestly wrote this so that I can ask friends for their system specs without h
 - `speedtest-cli` library (`pip install speedtest-cli`)
 - `wmi` library (for Windows) (`pip install wmi`)
 - `pyperclip` library (`pip install pyperclip`)
-- `matplotlib` library (`pip install matplotlib`)
 
 ## Usage
 
 **Install the required libraries:**
 ```bash
-pip install psutil speedtest-cli wmi pyperclip matplotlib
+pip install psutil speedtest-cli wmi pyperclip
 ```
 python mpcsc.py  # Replace mpcsc.py with the actual filename
