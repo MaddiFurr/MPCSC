@@ -1,165 +1,10 @@
-import datetime
-import math
 import platform
-import re
-import psutil
-import speedtest
+import datetime
+from sysinfo import get_system_info
+from benchmarks import cpu_benchmark, gpu_benchmark, network_benchmark
 
-# For Windows-specific functions
-try:
-    import wmi
-except ImportError:
-    wmi = None
-
-
-def get_system_info():
-    """Gathers comprehensive system information with progress updates."""
-
-    print("\n\033[1;33m[INFO]\033[0m Starting system diagnostics...")
-
-    system_info = {}
-
-    # --- CPU Information ---
-    print("\033[1;34m[CPU]\033[0m Gathering CPU information...")
-    system_info["CPU"] = {}
-    if wmi:
-        c = wmi.WMI()
-        for cpu in c.Win32_Processor():
-            system_info["CPU"]["Name"] = cpu.Name
-            system_info["CPU"]["Cores"] = psutil.cpu_count(logical=False)
-            system_info["CPU"]["Logical Cores"] = psutil.cpu_count(
-                logical=True
-            )
-            system_info["CPU"]["Current Speed (GHz)"] = round(
-                cpu.CurrentClockSpeed / 1000, 2
-            )
-            system_info["CPU"]["Base Speed (GHz)"] = round(
-                cpu.MaxClockSpeed / 1000, 2
-            )
-            break
-    print("\033[1;32m[CPU]\033[0m CPU information gathered successfully!")
-
-    # --- GPU Information ---
-    print("\033[1;34m[GPU]\033[0m Gathering GPU information...")
-    system_info["GPU"] = []
-    if wmi:
-        c = wmi.WMI()
-        for gpu in c.Win32_VideoController():
-            gpu_info = {
-                "Name": gpu.Name,
-                "DriverVersion": gpu.DriverVersion,
-            }
-            if gpu.AdapterRAM is not None and gpu.AdapterRAM > 0:
-                gpu_info["AdapterRAM (GB)"] = round(
-                    gpu.AdapterRAM / (1024**3), 2
-                )
-            else:
-                gpu_info["AdapterRAM (GB)"] = "Not available"
-            system_info["GPU"].append(gpu_info)
-    print("\033[1;32m[GPU]\033[0m GPU information gathered successfully!")
-
-    # --- Storage Information ---
-    print("\033[1;34m[STORAGE]\033[0m Gathering storage information...")
-    system_info["Storage"] = []
-    if wmi:
-        c = wmi.WMI()
-        physical_disks = c.Win32_DiskDrive()
-        for partition in psutil.disk_partitions():
-            try:
-                partition_usage = psutil.disk_usage(partition.mountpoint)
-                device_info = {
-                    "Device": partition.device,
-                    "Mount Point": partition.mountpoint,
-                    "File System": partition.fstype,
-                    "Total Size (GB)": round(
-                        partition_usage.total / (1024**3), 2
-                    ),
-                    "Used Space (GB)": round(
-                        partition_usage.used / (1024**3), 2
-                    ),
-                    "Free Space (GB)": round(
-                        partition_usage.free / (1024**3), 2
-                    ),
-                }
-                for (
-                    physical_disk
-                ) in physical_disks:
-                    if re.search(
-                        rf"{physical_disk.DeviceID.replace('\\', '\\\\')}",
-                        partition.device,
-                    ):
-                        device_info["Type"] = physical_disk.MediaType
-                        device_info["Model"] = physical_disk.Model
-                        break
-                system_info["Storage"].append(device_info)
-            except PermissionError:
-                pass
-    else:  # For non-Windows systems
-        for partition in psutil.disk_partitions():
-            try:
-                partition_usage = psutil.disk_usage(partition.mountpoint)
-                device_info = {
-                    "Device": partition.device,
-                    "Mount Point": partition.mountpoint,
-                    "File System": partition.fstype,
-                    "Total Size (GB)": round(
-                        partition_usage.total / (1024**3), 2
-                    ),
-                    "Used Space (GB)": round(
-                        partition_usage.used / (1024**3), 2
-                    ),
-                    "Free Space (GB)": round(
-                        partition_usage.free / (1024**3), 2
-                    ),
-                }
-                system_info["Storage"].append(device_info)
-            except PermissionError:
-                pass
-    print(
-        "\033[1;32m[STORAGE]\033[0m Storage information gathered successfully!"
-    )
-
-    # --- Memory Information ---
-    print("\033[1;34m[MEMORY]\033[0m Gathering memory information...")
-    mem = psutil.virtual_memory()
-    system_info["Memory"] = {
-        "Total (GB)": round(mem.total / (1024**3), 2),
-        "Available (GB)": round(mem.available / (1024**3), 2),
-        "Used (GB)": round(mem.used / (1024**3), 2),
-        "Percentage Used": mem.percent,
-    }
-    if wmi:
-        c = wmi.WMI()
-        for mem_module in c.Win32_PhysicalMemory():
-            system_info["Memory"]["Speed (MHz)"] = mem_module.Speed
-            break
-    print("\033[1;32m[MEMORY]\033[0m Memory information gathered successfully!")
-
-    # --- Network Speed Test ---
-    print("\033[1;34m[NETWORK]\033[0m Performing network speed test...")
-    try:
-        st = speedtest.Speedtest()
-        st.download()
-        st.upload()
-        system_info["Network"] = {
-            "Download (Mbps)": round(st.results.download / 1000000, 2),
-            "Upload (Mbps)": round(st.results.upload / 1000000, 2),
-            "Ping (ms)": round(st.results.ping, 2),
-        }
-        print("\033[1;32m[NETWORK]\033[0m Network speed test completed!")
-    except speedtest.ConfigRetrievalError:
-        system_info["Network"] = {"Error": "Could not perform speed test."}
-        print(
-            "\033[1;31m[NETWORK]\033[0m Error: Could not perform speed test."
-        )
-
-    print("\033[1;33m[INFO]\033[0m System diagnostics complete!\n")
-
-    return system_info
-
-
-def format_markdown(system_info):
-    """Formats system information into Markdown with program name, link, 
+def format_markdown(system_info, single_threaded_score, multi_threaded_score, gpu_score, network_info):
+    """Formats system information and benchmark results into Markdown with program name, link, 
     system name, and date/time."""
 
     markdown_text = f"## [Maddi's Personal Computer Specification Checker](https://maddi.wtf)\n"
@@ -181,6 +26,12 @@ def format_markdown(system_info):
                         markdown_text += f"> {key}: {value} GB ({used_percent}%)\n"
                     else:
                         markdown_text += f"> {key}: {value}\n"
+                if "Manufacturer" in drive:
+                    markdown_text += f"> Manufacturer: {drive['Manufacturer']}\n"
+                if "Model" in drive:
+                    markdown_text += f"> Model: {drive['Model']}\n"
+                if "Part Number" in drive:
+                    markdown_text += f"> Part Number: {drive['Part Number']}\n"
                 markdown_text += "\n"
         else:
             markdown_text += f"**{section}**\n"
@@ -198,8 +49,19 @@ def format_markdown(system_info):
                         markdown_text += f"> {key}: {value}\n"
             markdown_text += "\n"
 
-    return markdown_text
+    markdown_text += f"**CPU Benchmark Scores**\n"
+    markdown_text += f"> Single-threaded: {single_threaded_score} primes\n"
+    markdown_text += f"> Multi-threaded: {multi_threaded_score} primes\n\n"
 
+    markdown_text += f"**GPU Benchmark Score**\n"
+    markdown_text += f"> Frames Rendered: {gpu_score} frames\n\n"
+
+    markdown_text += f"**Network Speed Test Results**\n"
+    markdown_text += f"> Download Speed: {network_info['Network']['Download (Mbps)']} Mbps\n"
+    markdown_text += f"> Upload Speed: {network_info['Network']['Upload (Mbps)']} Mbps\n"
+    markdown_text += f"> Ping: {network_info['Network']['Ping (ms)']} ms\n"
+
+    return markdown_text
 
 def copy_to_clipboard(text):
     """Copies the given text to the clipboard."""
@@ -214,6 +76,19 @@ def copy_to_clipboard(text):
         )
 
 if __name__ == "__main__":
+    
+    print("\nPerforming CPU benchmark...")
+    single_threaded_score, multi_threaded_score = cpu_benchmark.run_benchmark_and_display()
+    
+    print("\nPerforming GPU benchmark...")
+    frame_count = gpu_benchmark.gpu_stress_test()
+    print(f"GPU Benchmark Score: {frame_count} frames rendered")
+    
+    print("\nPerforming network speed test...")
+    network_info = network_benchmark.perform_network_speed_test()
+    print(f"Network Speed Test Results: {network_info}")
+    
     system_info = get_system_info()
-    markdown_output = format_markdown(system_info)
+    markdown_output = format_markdown(system_info, single_threaded_score, multi_threaded_score, frame_count, network_info)
     copy_to_clipboard(markdown_output)
+    print(markdown_output)
