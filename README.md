@@ -1,6 +1,8 @@
 # Maddi's Personal Computer Specification Checker (MPCSC)
 
-This Python script gathers comprehensive information about your computer system, including CPU, GPU, storage, memory, and network details, and presents it in a user-friendly format. It also formats the information into Markdown text for easy sharing.
+This Python script gathers comprehensive information about your computer system, including CPU, GPU, storage, memory, and network details, and presents it in a user-friendly format.
+
+I honestly wrote this so that I can ask friends for their system specs without having to walk them through gathering it. The nice discord formatting makes things easier. Also it means I don't have to give them User Benchmark!
 
 ## Features
 
@@ -12,11 +14,6 @@ This Python script gathers comprehensive information about your computer system,
     - Network (download/upload speed, ping)
 - **Markdown Formatting:** Formats the system information into Markdown text for easy sharing on platforms like Discord.
 - **Clipboard Copying:** Copies the Markdown-formatted text to the clipboard for quick pasting.
-- **Benchmarks:** Includes CPU, GPU, and network benchmarks to give a rough indication of system performance.
-
-## Disclaimer
-
-The benchmark numbers provided by this script are not indicative of true performance and are meant to give a rough placement of your system. They should not be used as a definitive measure of performance.
 
 ## Requirements
 
@@ -25,10 +22,11 @@ The benchmark numbers provided by this script are not indicative of true perform
 - `speedtest-cli` library (`pip install speedtest-cli`)
 - `wmi` library (for Windows) (`pip install wmi`)
 - `pyperclip` library (`pip install pyperclip`)
-- `tqdm` library (`pip install tqdm`)
 
 ## Usage
 
 **Install the required libraries:**
 ```bash
-pip install psutil speedtest-cli wmi pyperclip tqdm
+pip install psutil speedtest-cli wmi pyperclip
+```
+python mpcsc.py  # Replace mpcsc.py with the actual filename
