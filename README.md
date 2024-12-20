@@ -1,6 +1,6 @@
 # Maddi's Personal Computer Specification Checker (MPCSC)
 
-This Python script gathers comprehensive information about your computer system, including CPU, GPU, storage, memory, and network details, and presents it in a user-friendly format.
+This Python script gathers comprehensive information about your computer system, including CPU, GPU, storage, memory, and network details, and presents it in a user-friendly format. It also generates a visually appealing image with graphs and charts summarizing the system diagnostics.
 
 I honestly wrote this so that I can ask friends for their system specs without having to walk them through gathering it. The nice discord formatting makes things easier. Also it means I don't have to give them User Benchmark!
 
